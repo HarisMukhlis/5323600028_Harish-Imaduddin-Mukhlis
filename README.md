@@ -1,1 +1,4 @@
-# 5323600028_Harish-Imaduddin-Mukhlis
+# Nama
+Harish Imaduddin Mukhlis
+# NRP
+5323600028
