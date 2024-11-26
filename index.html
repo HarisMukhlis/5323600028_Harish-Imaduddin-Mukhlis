@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Virtual Pet</title>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/ar.js@3.3.2/aframe/build/aframe-ar.min.js"></script> -->
+    <style>
+        /* Ensure the reset button container stays on top */
+        #reset-container {
+            position: fixed;
+            /* Fix it to the screen regardless of scrolling */
+            top: 10px;
+            margin-left: 10px;
+            left: 10px;
+            /* Distance from the left */
+            z-index: 100000;
+            /* Higher index to appear above the AR scene */
+            background-color: rgba(0, 0, 0, 0.5);
+            /* Semi-transparent background */
+            padding: 10px;
+            /* Padding around the content */
+            border-radius: 5px;
+            /* Rounded corners for aesthetic */
+            color: white;
+            /* White text color */
+        }
+
+        a-scene {
+            width: 100%;
+            height:100%;
+            position: fixed;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; overflow: hidden;">
+
+    <!-- Reset Button Container -->
+    <div id="reset-container">
+        <button id="resetButton" style="padding: 10px; font-size: 16px;">Reset Position</button>
+        <p>Click the object to make it jump!</p>
+    </div>
+    <!-- A-Frame Scene -->
+    <a-scene vr-mode-ui="enabled: false;" arjs>
+        <!-- Asset Management System -->
+        <a-assets>
+            <a-asset-item id="bunny" src="bunny/scene.gltf"></a-asset-item>
+        </a-assets>
+        <!-- <a-marker-camera presets='hiro'> -->
+
+            <!-- 3D Model -->
+            <a-entity id="virtual-pet" gltf-model="#bunny" scale="0.1 0.1 0.1" position="0 0 -2" rotation="0 0 0"
+                class="clickable" geometry="primitive: sphere; radius: 0.5" animation-mixer>
+            </a-entity>
+        <!-- </a-marker-camera> -->
+
+
+        <!-- Camera -->
+        <a-entity id="camera" camera look-controls wasd-controls>
+            <a-cursor></a-cursor>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        // Reset Button Functionality
+        document.getElementById('resetButton').addEventListener('click', function () {
+            const camera = document.querySelector('#camera');
+            const virtualPet = document.querySelector('#virtual-pet');
+
+            // Get camera's world position and direction
+            const cameraWorldPosition = new THREE.Vector3();
+            const cameraDirection = new THREE.Vector3();
+            camera.object3D.getWorldPosition(cameraWorldPosition);
+            camera.object3D.getWorldDirection(cameraDirection);
+
+            // Calculate new position for the virtual pet (2 units in front of the camera)
+            const newPosition = cameraWorldPosition.clone().add(cameraDirection.multiplyScalar(-2));
+
+            // Set the new position for the virtual pet
+            virtualPet.setAttribute('position', `${newPosition.x} ${newPosition.y} ${newPosition.z}`);
+        });
+
+        // Jump Functionality
+        const virtualPet = document.querySelector('#virtual-pet');
+        let isJumping = false;
+
+        virtualPet.addEventListener('mousedown', function () {
+            if (isJumping) return;
+            isJumping = true;
+
+            const position = virtualPet.object3D.position;
+            const xPos = position.x;
+            const yPos = position.y;
+            const zPos = position.z;
+            const jumpHeight = 1.5;
+
+            // Add animations
+            virtualPet.setAttribute('animation__jumpup', {
+                property: 'position',
+                to: `${xPos} ${yPos + jumpHeight} ${zPos}`,
+                dur: 300,
+                easing: 'easeOutQuad',
+                loop: false
+            });
+
+            virtualPet.addEventListener('animationcomplete__jumpup', function () {
+                virtualPet.setAttribute('animation__jumpdown', {
+                    property: 'position',
+                    to: `${xPos} ${yPos} ${zPos}`,
+                    dur: 300,
+                    easing: 'easeInQuad',
+                    loop: false
+                });
+            });
+
+            virtualPet.addEventListener('animationcomplete__jumpdown', function () {
+                isJumping = false;
+                // Hapus animasi sebelumnya
+                virtualPet.removeAttribute('animation__jumpup');
+                virtualPet.removeAttribute('animation__jumpdown');
+            });
+        });
+    </script>
+</body>
+
+</html>
